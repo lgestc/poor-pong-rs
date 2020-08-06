@@ -16,7 +16,7 @@ impl Paddle {
         Paddle {
             position: Point2::new(0.0, 0.0),
             direction: Point2::new(0.0, 0.0),
-            velocity: 6.0,
+            velocity: 4.0,
         }
     }
 

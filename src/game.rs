@@ -18,13 +18,14 @@ pub struct MyGame {
     fps_readings: Vec<f32>,
     fixed_time_step: f32,
     movement: MovementDirection,
+    paddle_height: f32,
+    paddle_width: f32,
 }
 
 impl MyGame {
     pub fn new(_ctx: &mut Context) -> MyGame {
         let updates_per_second = 100;
 
-        // Load/create resources such as images here.
         MyGame {
             ball: Ball::new(),
             paddle: Paddle::new(),
@@ -35,6 +36,8 @@ impl MyGame {
             fps_readings: vec![],
             fixed_time_step: 1.0 / updates_per_second as f32,
             movement: MovementDirection::None,
+            paddle_height: 128.0,
+            paddle_width: 8.0,
         }
     }
 }
@@ -65,6 +68,8 @@ impl EventHandler for MyGame {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         let diff: Duration = Instant::now() - self.last_update;
 
+        let mut game_over = false;
+
         let delta = diff.as_secs_f32();
 
         self.accumulated_time += delta;
@@ -72,19 +77,30 @@ impl EventHandler for MyGame {
         while self.accumulated_time >= self.fixed_time_step {
             self.paddle.update(&self.movement);
 
-            let mut ball_touches_paddle = false;
-            if self.ball.position.x <= 32.0 {
-                if (self.ball.position.y >= self.paddle.position.y && self.ball.position.y <= self.paddle.position.y + 128.0) {
-                    ball_touches_paddle = true;
-                }
-            }
+            let handle_outside_screen = Box::new(|| {
+                game_over = true;
+            });
 
-            self.ball.update(ball_touches_paddle);
+            self.ball.update(
+                ggez::graphics::Rect::new(
+                    self.paddle.position.x,
+                    self.paddle.position.y,
+                    self.paddle_width,
+                    self.paddle_height,
+                ),
+                handle_outside_screen,
+            );
 
             self.accumulated_time -= self.fixed_time_step;
         }
 
         self.last_update = Instant::now();
+
+        if game_over {
+            return Err(ggez::error::GameError::ConfigError(String::from(
+                "ball outside bounds",
+            )));
+        }
 
         Ok(())
     }
@@ -115,7 +131,7 @@ impl EventHandler for MyGame {
             ctx,
             graphics::DrawMode::stroke(1.0),
             self.ball.position,
-            4.0,
+            3.0,
             1.0,
             graphics::WHITE,
         )?;
@@ -123,7 +139,12 @@ impl EventHandler for MyGame {
         let paddle_sprite = graphics::Mesh::new_rectangle(
             ctx,
             graphics::DrawMode::stroke(1.0),
-            ggez::graphics::Rect::new(self.paddle.position.x, self.paddle.position.y, 32.0, 128.0),
+            ggez::graphics::Rect::new(
+                self.paddle.position.x,
+                self.paddle.position.y,
+                self.paddle_width,
+                self.paddle_height,
+            ),
             graphics::WHITE,
         )?;
 
