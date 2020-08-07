@@ -7,6 +7,11 @@ pub struct Ball {
     velocity: f32,
 }
 
+pub enum UpdateResult {
+    Continue,
+    OutsideScreen,
+}
+
 impl Ball {
     pub fn new() -> Self {
         Ball {
@@ -17,11 +22,7 @@ impl Ball {
         }
     }
 
-    pub fn update<'a>(
-        &mut self,
-        paddle_bounds: ggez::graphics::Rect,
-        on_outside_screen: Box<dyn FnOnce() + 'a>,
-    ) {
+    pub fn update<'a>(&mut self, paddle_bounds: ggez::graphics::Rect) -> UpdateResult {
         let mut ball_touches_paddle = false;
 
         if self.position.x <= paddle_bounds.w {
@@ -43,7 +44,7 @@ impl Ball {
             self.velocity = self.base_velocity * (1.0 + (offset_center + contact_position).abs());
         } else {
             if self.position.x >= 800.0 || self.position.x <= 0.0 {
-                on_outside_screen();
+                return UpdateResult::OutsideScreen;
             }
 
             if self.position.y >= 600.0 || self.position.y <= 0.0 {
@@ -53,5 +54,7 @@ impl Ball {
 
         self.position.x += self.direction.x * self.velocity;
         self.position.y += self.direction.y * self.velocity;
+
+        UpdateResult::Continue
     }
 }

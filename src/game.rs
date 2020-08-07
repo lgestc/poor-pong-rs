@@ -5,7 +5,7 @@ use ggez::{
 
 use std::time::{Duration, Instant};
 
-use crate::entities::ball::Ball;
+use crate::entities::ball::{Ball, UpdateResult};
 use crate::entities::paddle::{MovementDirection, Paddle};
 
 pub struct MyGame {
@@ -68,8 +68,6 @@ impl EventHandler for MyGame {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         let diff: Duration = Instant::now() - self.last_update;
 
-        let mut game_over = false;
-
         let delta = diff.as_secs_f32();
 
         self.accumulated_time += delta;
@@ -77,30 +75,24 @@ impl EventHandler for MyGame {
         while self.accumulated_time >= self.fixed_time_step {
             self.paddle.update(&self.movement);
 
-            let handle_outside_screen = Box::new(|| {
-                game_over = true;
-            });
-
-            self.ball.update(
-                ggez::graphics::Rect::new(
-                    self.paddle.position.x,
-                    self.paddle.position.y,
-                    self.paddle_width,
-                    self.paddle_height,
-                ),
-                handle_outside_screen,
-            );
+            match self.ball.update(ggez::graphics::Rect::new(
+                self.paddle.position.x,
+                self.paddle.position.y,
+                self.paddle_width,
+                self.paddle_height,
+            )) {
+                UpdateResult::OutsideScreen => {
+                    return Err(ggez::error::GameError::ConfigError(String::from(
+                        "ball outside bounds",
+                    )));
+                }
+                _ => {}
+            }
 
             self.accumulated_time -= self.fixed_time_step;
         }
 
         self.last_update = Instant::now();
-
-        if game_over {
-            return Err(ggez::error::GameError::ConfigError(String::from(
-                "ball outside bounds",
-            )));
-        }
 
         Ok(())
     }
