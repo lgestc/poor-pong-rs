@@ -3,6 +3,7 @@ use ggez::ContextBuilder;
 
 mod entities;
 mod game;
+mod world;
 
 use game::MyGame;
 

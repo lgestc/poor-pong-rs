@@ -14,13 +14,13 @@ pub struct Paddle {
 impl Paddle {
     pub fn new() -> Self {
         Paddle {
-            position: Point2::new(0.0, 0.0),
+            position: Point2::new(0.0, 260.0),
             direction: Point2::new(0.0, 0.0),
             velocity: 4.0,
         }
     }
 
-    pub fn update(&mut self, movement_direction: &MovementDirection) {
+    pub fn update_position(&mut self, movement_direction: &MovementDirection) {
         match movement_direction {
             MovementDirection::Down => {
                 self.direction.y = 1.0;
