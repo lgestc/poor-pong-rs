@@ -5,7 +5,13 @@ use ggez::{
 
 use std::time::{Duration, Instant};
 
-use crate::{entities::paddle::MovementDirection, world::World};
+use crate::{
+    entities::{
+        ball::Ball,
+        paddle::{MovementDirection, Paddle},
+    },
+    world::World,
+};
 
 pub struct MyGame {
     world: World,
@@ -31,9 +37,33 @@ impl MyGame {
             fixed_time_step: 1.0 / updates_per_second as f32,
         }
     }
+    fn draw_paddle(&self, ctx: &mut Context, paddle: &Paddle) -> GameResult {
+        let sprite = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::stroke(1.0),
+            ggez::graphics::Rect::new(
+                paddle.position.x,
+                paddle.position.y,
+                self.world.paddle_width,
+                self.world.paddle_height,
+            ),
+            graphics::WHITE,
+        )?;
 
-    pub fn restart(&mut self) {
-        self.world = World::new();
+        graphics::draw(ctx, &sprite, (na::Point2::new(0.0, 0.0),))
+    }
+
+    fn draw_ball(&self, ctx: &mut Context, ball: &Ball) -> GameResult {
+        let ball_sprite = graphics::Mesh::new_circle(
+            ctx,
+            graphics::DrawMode::stroke(1.0),
+            self.world.ball.position,
+            3.0,
+            1.0,
+            graphics::WHITE,
+        )?;
+
+        graphics::draw(ctx, &ball_sprite, (na::Point2::new(0.0, 0.0),))
     }
 }
 
@@ -97,42 +127,12 @@ impl EventHandler for MyGame {
             self.fps_readings.clear();
         }
 
-        let ball_sprite = graphics::Mesh::new_circle(
-            ctx,
-            graphics::DrawMode::stroke(1.0),
-            self.world.ball.position,
-            3.0,
-            1.0,
-            graphics::WHITE,
-        )?;
+        let paddles = vec![&self.world.paddle, &self.world.paddle2];
+        for paddle in paddles.iter() {
+            self.draw_paddle(ctx, *paddle)?;
+        }
 
-        let paddle_sprite = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::stroke(1.0),
-            ggez::graphics::Rect::new(
-                self.world.paddle.position.x,
-                self.world.paddle.position.y,
-                self.world.paddle_width,
-                self.world.paddle_height,
-            ),
-            graphics::WHITE,
-        )?;
-
-        let paddle_sprite2 = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::stroke(1.0),
-            ggez::graphics::Rect::new(
-                self.world.paddle2.position.x,
-                self.world.paddle2.position.y,
-                self.world.paddle_width,
-                self.world.paddle_height,
-            ),
-            graphics::Color::from_rgb(255, 0, 0),
-        )?;
-
-        graphics::draw(ctx, &ball_sprite, (na::Point2::new(0.0, 0.0),))?;
-        graphics::draw(ctx, &paddle_sprite, (na::Point2::new(0.0, 0.0),))?;
-        graphics::draw(ctx, &paddle_sprite2, (na::Point2::new(0.0, 0.0),))?;
+        self.draw_ball(ctx, &self.world.ball)?;
 
         graphics::present(ctx)?;
 
